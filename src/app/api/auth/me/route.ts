@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { userService } from "@/lib/service/user.service";
+import { authService } from "@/lib/service/auth.service";
 
 export async function GET(req: NextRequest) {
     try {
@@ -12,16 +10,10 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await userService.getById(payload.id);
-        if (!user) {
-            return NextResponse.json({ message: "User not found" }, { status: 404 });
-        }
-
-        // remove password from response
-        const { password, ...safeUser } = user as any;
-
-        return NextResponse.json(safeUser);
-    } catch (error) {
-        return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+        const user = await authService.getCurrentUser(payload.id);
+        return NextResponse.json(user);
+    } catch (error: any) {
+        const status = error.message === "User not found" ? 404 : 500;
+        return NextResponse.json({ message: error.message || "Internal server error" }, { status });
     }
 }
